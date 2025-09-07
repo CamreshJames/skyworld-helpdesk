@@ -1,0 +1,45 @@
+.footer {
+    background: hsla(191, 21%, 90%, 1);
+    height: 36px;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    padding: 0 1rem;
+    gap: 1rem;
+    box-sizing: border-box;
+  }
+  .footer .right {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .footer .skyworld svg {
+    display: block;
+  }
+  
+  .footer .skyworld-text span {
+    color: hsla(191, 64%, 22%, 1);
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    font-size: 0.85rem;
+    line-height: 1;
+  }
+  .footer .left {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .footer .user-line svg {
+    display: block;
+  }
+  
+  .footer .user-line-text {
+    color: hsla(191, 64%, 22%, 1);
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+    font-size: 0.85rem;
+    line-height: 1;
+  }
+  

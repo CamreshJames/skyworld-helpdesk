@@ -1,0 +1,109 @@
+.header {
+    background: hsla(191, 64%, 22%, 1);
+    height: 48px;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .header-left{
+    display: flex;
+    align-items: center;
+    flex-direction: row;
+  }  
+  
+  .helpdesk {
+    height: 48px;
+    cursor: pointer;
+    width: 47px;
+    padding: 0 0.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-width: 0px 1px 1px 0px;
+    border-style: solid;
+    border-color: hsla(0, 0%, 100%, 1);
+  }
+  
+  .helpdesk-text span {
+    padding-left: 1rem;
+    color: white;
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+    font-style: normal;
+    font-size: 1rem;
+    line-height: 1;
+    letter-spacing: 0;
+  }
+  
+  .helpdesk-badge {
+    font-weight: 300;
+    background-color: aliceblue;
+    color: hsla(208, 80%, 52%, 1);
+    font-size: 12px;
+    border-radius: 2px;
+    width: 51px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 1rem;
+  }
+  
+  .helpdesk-badge span {
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    font-style: normal;
+    font-size: 9px;
+    line-height: 14px;
+    letter-spacing: 0;
+    text-transform: uppercase;
+  }
+  .header-right{
+    display: flex;
+    align-items: center;
+    flex-direction: row;
+  }
+  .helpdesk-add,  .helpdesk-search, .helpdesk-bell, .helpdesk-user {
+    cursor: pointer;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 0.5rem;
+  }
+  .helpdesk-dropdown {
+    position: relative;
+    margin: 0 0.5rem;
+    display: flex;
+    align-items: center;
+  }
+  
+  .helpdesk-dropdown select {
+    background-color: transparent;
+    color: rgb(221, 216, 216);
+    border: 1px solid rgb(199, 198, 198);
+    border-radius: 3px;
+    padding: 4px 28px 4px 8px;
+    font-size: 0.85rem;
+    font-family: 'Inter', sans-serif;
+    height: 28px;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    cursor: pointer;
+  }
+  .helpdesk-dropdown::after {
+    content: "<>";
+    position: absolute;
+    font-weight: 700;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%) rotate(90deg);
+    font-size: .8rem;
+    color: rgb(255, 255, 255);
+    pointer-events: none;
+  }
+  
+  

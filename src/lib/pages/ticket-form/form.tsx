@@ -28,7 +28,7 @@ function TicketForm() {
     attachments: []
   });
 
-  const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
+  const [, setSelectedFiles] = useState<FileList | null>(null);
 
   // Main categories and their sub-categories
   const categoryMap = {

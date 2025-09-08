@@ -78,15 +78,12 @@
     font-style: italic;
 }
 
-/* Ensure SVG icons fit within buttons */
 .editor-toolbar button svg {
     width: 18px;
     height: 18px;
-    fill: currentColor;
     stroke: currentColor;
 }
 
-/* Adjust toolbar layout for more icons */
 .editor-toolbar {
     max-width: 100%;
     overflow-x: auto;

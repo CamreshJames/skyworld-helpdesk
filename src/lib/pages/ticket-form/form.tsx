@@ -24,27 +24,11 @@ function TicketForm() {
     mainCategory: '',
     subCategory: '',
     projectPhase: '',
-    description: '<p>Hello <strong>World!</strong></p>',
+    description: 'Description',
     attachments: []
   });
 
   const [, setSelectedFiles] = useState<FileList | null>(null);
-
-  // Main categories and their sub-categories
-  const categoryMap = {
-    'Bug Report': ['UI/UX Issues', 'Functional Issues', 'Performance Issues'],
-    'Feature Request': ['New Feature', 'Enhancement', 'Integration'],
-    'Technical Support': ['Configuration', 'Installation', 'Troubleshooting'],
-    'Documentation': ['Missing Info', 'Incorrect Info', 'Update Request']
-  };
-
-  const projectPhases = [
-    'Planning',
-    'Development',
-    'Testing',
-    'Deployment',
-    'Maintenance'
-  ];
 
   const handleInputChange = (field: keyof TicketFormData, value: string) => {
     setFormData(prev => ({
@@ -106,7 +90,7 @@ function TicketForm() {
       mainCategory: '',
       subCategory: '',
       projectPhase: '',
-      description: '<p>Hello <strong>World!</strong></p>',
+      description: 'Description',
       attachments: []
     });
     setSelectedFiles(null);
@@ -121,48 +105,36 @@ function TicketForm() {
       <form onSubmit={handleSubmit} className="ticket-form">
         <div className="form-group">
           <label htmlFor="mainCategory">Main Category *</label>
-          <select
+          <input
             id="mainCategory"
             value={formData.mainCategory}
             onChange={(e) => handleInputChange('mainCategory', e.target.value)}
+            placeholder="Enter Main Category"
             required
-          >
-            <option value="">Select...</option>
-            {Object.keys(categoryMap).map(category => (
-              <option key={category} value={category}>{category}</option>
-            ))}
-          </select>
+          />
         </div>
 
         <div className="form-group">
           <label htmlFor="subCategory">Sub Category *</label>
-          <select
+          <input
             id="subCategory"
             value={formData.subCategory}
             onChange={(e) => handleInputChange('subCategory', e.target.value)}
+            placeholder="Enter Sub Category"
             disabled={!formData.mainCategory}
             required
-          >
-            <option value="">Select...</option>
-            {formData.mainCategory && categoryMap[formData.mainCategory as keyof typeof categoryMap]?.map(subCat => (
-              <option key={subCat} value={subCat}>{subCat}</option>
-            ))}
-          </select>
+          />
         </div>
 
         <div className="form-group">
           <label htmlFor="projectPhase">Project Phase *</label>
-          <select
+          <input
             id="projectPhase"
             value={formData.projectPhase}
             onChange={(e) => handleInputChange('projectPhase', e.target.value)}
+            placeholder="Enter Project Phase"
             required
-          >
-            <option value="">Select...</option>
-            {projectPhases.map(phase => (
-              <option key={phase} value={phase}>{phase}</option>
-            ))}
-          </select>
+          />
         </div>
 
         <div className="form-group">
@@ -191,22 +163,22 @@ function TicketForm() {
               Select Files
             </button>
             <div className="attachment-instruction">
-                <div>
-                  Allowed file extensions: <span className="bold-text">.jpg, .jpeg, .pdf, .png</span>
-                </div> 
-                <div>
-                  Maximum File Size: <span className="bold-text">2MB</span>
-                </div>
-                 <div>
-                  Maximum No. of File: <span className="bold-text">5</span>
-                 </div>
+              <div>
+                Allowed file extensions: <span className="bold-text">.jpg, .jpeg, .pdf, .png</span>
+              </div>
+              <div>
+                Maximum File Size: <span className="bold-text">2MB</span>
+              </div>
+              <div>
+                Maximum No. of File: <span className="bold-text">5</span>
+              </div>
             </div>
 
             {formData.attachments.length > 0 && (
               <div className="attachments-list">
                 {formData.attachments.map(attachment => (
                   <div key={attachment.id} className="attachment-item">
-                    <AttachmentPinIcon/>
+                    <AttachmentPinIcon />
                     <span className="attachment-name">{attachment.name}</span>
                     <span className="attachment-size">({formatFileSize(attachment.size)})</span>
                     <button
@@ -224,16 +196,16 @@ function TicketForm() {
         </div>
       </form>
       <div className="form-actions">
-          <button type="submit" className="create-button">
-            Create
-          </button>
-          <button type="button" onClick={handleSubmit} className="create-assign-button">
-            Create and add another
-          </button>
-          <button type="button" onClick={handleCancel} className="cancel-button">
-            Cancel
-          </button>
-        </div>
+        <button type="submit" className="create-button">
+          Create
+        </button>
+        <button type="button" onClick={handleSubmit} className="create-assign-button">
+          Create and add another
+        </button>
+        <button type="button" onClick={handleCancel} className="cancel-button">
+          Cancel
+        </button>
+      </div>
     </div>
   );
 }

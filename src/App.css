@@ -17,3 +17,9 @@
   background-color: #ffffff;
   overflow-y: auto;
 }
+
+@media (max-width: 768px) {
+  .main-content {
+    flex-direction: column;
+  }
+}

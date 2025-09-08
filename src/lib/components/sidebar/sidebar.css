@@ -99,3 +99,31 @@
   .sidebar.expanded .sidebarbottom-collapse svg {
     transform: rotate(180deg);
   }
+
+@media (max-width: 768px) {
+    .sidebar {
+        width: 100%;
+        height: auto;
+        display: flex;
+        flex-direction: row;
+        justify-content: space-around;
+    }
+    .sidebar-top{
+        display: flex;
+        flex-direction: row;
+    }
+
+    .sidebar.expanded {
+        width: 100%;
+    }
+
+    .sidebar-top {
+        flex-direction: row;
+        padding-top: 0;
+        gap: 0;
+    }
+
+    .sidebar-bottom {
+        display: none;
+    }
+  }

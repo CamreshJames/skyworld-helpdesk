@@ -43,3 +43,8 @@
     line-height: 1;
   }
   
+@media (max-width: 768px) {
+    .footer {
+        justify-content: center;
+    }
+  }

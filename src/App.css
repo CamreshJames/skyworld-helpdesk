@@ -13,7 +13,7 @@
 
 .content-area {
   flex: 1;
-  padding: 1rem;
+  padding: 0;
   background-color: #ffffff;
   overflow-y: auto;
 }

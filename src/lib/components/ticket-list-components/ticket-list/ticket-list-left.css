@@ -1,0 +1,29 @@
+.ticket-list-left {
+    width: 260px;
+    background: #fff;
+    border-right: 1px solid hsla(0, 1%, 89%, 1);
+    font-family: Inter, sans-serif;
+    flex: 1;
+    min-height: 100%;
+  }
+  
+  .ticket-list-left-header {
+    font-weight: 600;
+    height: 48px;
+    font-style: bold;
+    font-size: 1rem;
+    padding: 0px 12px;
+    color: hsla(190, 68%, 23%, 1);
+    border-bottom: 1px solid hsla(0, 1%, 89%, 1);
+    background-color: hsla(210, 25%, 97%, 1);
+    display: flex;
+    align-items: center;
+  }
+  
+  .ticket-list-left-body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 4px 0;
+  }
+  

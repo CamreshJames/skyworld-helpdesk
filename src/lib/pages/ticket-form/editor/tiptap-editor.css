@@ -1,0 +1,102 @@
+.tiptap-editor {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.editor-toolbar {
+    background: #f8f9fa;
+    border-bottom: 1px solid #ccc;
+    padding: 8px 12px;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+}
+.editor-toolbar > div{
+    padding: 5px;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    border-radius: 5px;
+    border: 1px solid #706d6d;
+}
+
+.editor-toolbar button {
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.editor-toolbar button:hover {
+    background: #e9ecef;
+}
+
+.editor-toolbar button.active {
+    background: rgb(226, 226, 226);
+    border-color: rgb(15, 15, 15);
+}
+
+.editor-content {
+    min-height: 120px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.editor-content .ProseMirror {
+    padding: 12px;
+    outline: none;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #333;
+}
+
+.editor-content .ProseMirror p {
+    margin: 0 0 8px 0;
+}
+
+.editor-content .ProseMirror ul,
+.editor-content .ProseMirror ol {
+    padding-left: 20px;
+    margin: 8px 0;
+}
+
+.editor-content .ProseMirror li {
+    margin: 4px 0;
+}
+
+.editor-content .ProseMirror strong {
+    font-weight: bold;
+}
+
+.editor-content .ProseMirror em {
+    font-style: italic;
+}
+
+/* Ensure SVG icons fit within buttons */
+.editor-toolbar button svg {
+    width: 18px;
+    height: 18px;
+    fill: currentColor;
+    stroke: currentColor;
+}
+
+/* Adjust toolbar layout for more icons */
+.editor-toolbar {
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+.editor-toolbar::-webkit-scrollbar {
+    height: 6px;
+}
+
+.editor-toolbar::-webkit-scrollbar-thumb {
+    background-color: #ccc;
+    border-radius: 3px;
+}

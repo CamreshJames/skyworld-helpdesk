@@ -1,4 +1,3 @@
-import React from 'react';
 import Table from '../../../utils/table/Table.tsx';
 import type { ColumnProps } from '../../../utils/table/Table.tsx';
 import type { Ticket, Attachment } from '../../../pages/ticket-form/form.tsx';

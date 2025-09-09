@@ -28,7 +28,7 @@ function App() {
           <Sidebar />
           <main className="content-area">
             <Routes>
-              <Route path="/" element={<ComingSoonPage pageName="Dashboard" />} />
+              <Route path="/" element={<TicketList/>} />
               <Route path="/home" element={<ComingSoonPage pageName="Home" />} />
               <Route path="/ticket-form" element={<TicketForm />} />
               <Route path="/search" element={<ComingSoonPage pageName="Search" />} />

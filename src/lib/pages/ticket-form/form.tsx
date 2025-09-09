@@ -5,7 +5,7 @@ import { AttachmentPinIcon } from '../../utils/icons';
 import { encryptData, decryptData } from '../../utils/cryptoUtils';
 
 // Types
-interface Attachment {
+export interface Attachment {
   id: string;
   name: string;
   size: number;
@@ -20,7 +20,7 @@ interface TicketFormData {
   attachments: Attachment[];
 }
 
-interface Ticket extends TicketFormData {
+export interface Ticket extends TicketFormData {
   id: string;
   createdAt: string;
 }
@@ -94,8 +94,9 @@ function TicketForm() {
       }
     };
     saveTickets();
-  }, [tickets, aesKey]);
-  
+  }, [tickets, aesKey]); // Run when tickets or aesKey changes
+
+  // Constants for attachment validation
   const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
   const maxSize = 2 * 1024 * 1024; // 2MB
   const maxFiles = 5;

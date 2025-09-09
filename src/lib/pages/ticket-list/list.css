@@ -1,0 +1,12 @@
+.ticket-list-container {
+    display: flex;
+    flex-direction: row;
+    height: 100%;
+    /* min-height: 100vh; */
+  }
+  
+  @media (max-width: 768px) {
+    .ticket-list-container {
+      flex-direction: column;
+    }
+  }

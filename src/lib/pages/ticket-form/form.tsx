@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import TiptapEditor from './editor/tiptap-editor';
 import './form.css';
 import { AttachmentPinIcon } from '../../utils/icons';
@@ -19,6 +19,11 @@ interface TicketFormData {
   attachments: Attachment[];
 }
 
+interface Ticket extends TicketFormData {
+  id: string;
+  createdAt: string;
+}
+
 function TicketForm() {
   const [formData, setFormData] = useState<TicketFormData>({
     mainCategory: '',
@@ -28,7 +33,58 @@ function TicketForm() {
     attachments: []
   });
 
+  const [errors, setErrors] = useState<Partial<Record<keyof TicketFormData, string>>>({});
+  const [tickets, setTickets] = useState<Ticket[]>(() => {
+    // Initialize from localStorage if available
+    const savedTickets = localStorage.getItem('tickets');
+    return savedTickets ? JSON.parse(savedTickets) : [];
+  });
   const [, setSelectedFiles] = useState<FileList | null>(null);
+
+  // Save to localStorage and sessionStorage whenever tickets change
+  useEffect(() => {
+    localStorage.setItem('tickets', JSON.stringify(tickets));
+    sessionStorage.setItem('tickets', JSON.stringify(tickets));
+  }, [tickets]);
+
+  const validateForm = (): boolean => {
+    const newErrors: Partial<Record<keyof TicketFormData, string>> = {};
+
+    if (!formData.mainCategory.trim()) {
+      newErrors.mainCategory = 'Main Category is required';
+    }
+
+    if (!formData.subCategory.trim()) {
+      newErrors.subCategory = 'Sub Category is required';
+    }
+
+    if (!formData.projectPhase.trim()) {
+      newErrors.projectPhase = 'Project Phase is required';
+    }
+
+    if (formData.description.trim() === 'Description' || formData.description.trim() === '') {
+      newErrors.description = 'Description is required';
+    }
+
+    // Validate attachments
+    if (formData.attachments.length > 5) {
+      newErrors.attachments = 'Maximum 5 files allowed';
+    }
+
+    formData.attachments.forEach((attachment) => {
+      const validExtensions = ['jpg', 'jpeg', 'pdf', 'png'];
+      const extension = attachment.name.split('.').pop()?.toLowerCase();
+      if (!extension || !validExtensions.includes(extension)) {
+        newErrors.attachments = 'Only .jpg, .jpeg, .pdf, .png files are allowed';
+      }
+      if (attachment.size > 2 * 1024 * 1024) { // 2MB in bytes
+        newErrors.attachments = 'File size must not exceed 2MB';
+      }
+    });
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleInputChange = (field: keyof TicketFormData, value: string) => {
     setFormData(prev => ({
@@ -36,6 +92,8 @@ function TicketForm() {
       [field]: value,
       ...(field === 'mainCategory' && { subCategory: '' })
     }));
+    // Clear error for this field when user starts typing
+    setErrors(prev => ({ ...prev, [field]: undefined }));
   };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -43,7 +101,6 @@ function TicketForm() {
     if (files) {
       setSelectedFiles(files);
 
-      // Convert FileList to Attachment array
       const newAttachments: Attachment[] = Array.from(files).map((file, index) => ({
         id: `${Date.now()}-${index}`,
         name: file.name,
@@ -55,6 +112,8 @@ function TicketForm() {
         ...prev,
         attachments: [...prev.attachments, ...newAttachments]
       }));
+      // Validate attachments immediately
+      validateForm();
     }
   };
 
@@ -63,6 +122,8 @@ function TicketForm() {
       ...prev,
       attachments: prev.attachments.filter(att => att.id !== id)
     }));
+    // Re-validate after removing attachment
+    validateForm();
   };
 
   const formatFileSize = (bytes: number): string => {
@@ -73,16 +134,35 @@ function TicketForm() {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = (event: React.FormEvent, addAnother: boolean = false) => {
     event.preventDefault();
 
-    if (!formData.mainCategory || !formData.subCategory || !formData.projectPhase) {
-      alert('Please fill in all required fields');
+    if (!validateForm()) {
       return;
     }
 
-    console.log('Ticket Data:', formData);
-    alert('Ticket created successfully!');
+    const newTicket: Ticket = {
+      ...formData,
+      id: `${Date.now()}`,
+      createdAt: new Date().toISOString()
+    };
+
+    setTickets(prev => [...prev, newTicket]);
+
+    if (!addAnother) {
+      alert('Ticket created successfully!');
+      handleCancel();
+    } else {
+      alert('Ticket created successfully! Ready to add another.');
+      setFormData({
+        mainCategory: '',
+        subCategory: '',
+        projectPhase: '',
+        description: 'Description',
+        attachments: []
+      });
+      setSelectedFiles(null);
+    }
   };
 
   const handleCancel = () => {
@@ -94,7 +174,23 @@ function TicketForm() {
       attachments: []
     });
     setSelectedFiles(null);
+    setErrors({});
   };
+
+  const ErrorIcon = () => (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      style={{ marginRight: '4px', verticalAlign: 'middle' }}
+    >
+      <circle cx="8" cy="8" r="7" stroke="red" strokeWidth="1.5" />
+      <path d="M8 4V9" stroke="red" strokeWidth="1.5" strokeLinecap="round" />
+      <circle cx="8" cy="12" r="1" fill="red" />
+    </svg>
+  );
 
   return (
     <div className="ticket-form-container">
@@ -102,7 +198,7 @@ function TicketForm() {
         <h2>Create Ticket</h2>
       </div>
 
-      <form onSubmit={handleSubmit} className="ticket-form">
+      <form onSubmit={(e) => handleSubmit(e)} className="ticket-form">
         <div className="form-group">
           <label htmlFor="mainCategory">Main Category *</label>
           <input
@@ -112,6 +208,12 @@ function TicketForm() {
             placeholder="Enter Main Category"
             required
           />
+          {errors.mainCategory && (
+            <div style={{ color: 'red', fontSize: '12px', display: 'flex', alignItems: 'center' }}>
+              <ErrorIcon />
+              {errors.mainCategory}
+            </div>
+          )}
         </div>
 
         <div className="form-group">
@@ -124,6 +226,12 @@ function TicketForm() {
             disabled={!formData.mainCategory}
             required
           />
+          {errors.subCategory && (
+            <div style={{ color: 'red', fontSize: '12px', display: 'flex', alignItems: 'center' }}>
+              <ErrorIcon />
+              {errors.subCategory}
+            </div>
+          )}
         </div>
 
         <div className="form-group">
@@ -135,6 +243,12 @@ function TicketForm() {
             placeholder="Enter Project Phase"
             required
           />
+          {errors.projectPhase && (
+            <div style={{ color: 'red', fontSize: '12px', display: 'flex', alignItems: 'center' }}>
+              <ErrorIcon />
+              {errors.projectPhase}
+            </div>
+          )}
         </div>
 
         <div className="form-group">
@@ -143,6 +257,12 @@ function TicketForm() {
             content={formData.description}
             onChange={(content) => handleInputChange('description', content)}
           />
+          {errors.description && (
+            <div style={{ color: 'red', fontSize: '12px', display: 'flex', alignItems: 'center' }}>
+              <ErrorIcon />
+              {errors.description}
+            </div>
+          )}
         </div>
 
         <div className="form-group">
@@ -152,6 +272,7 @@ function TicketForm() {
               type="file"
               id="fileInput"
               multiple
+              accept=".jpg,.jpeg,.pdf,.png"
               onChange={handleFileSelect}
               style={{ display: 'none' }}
             />
@@ -192,14 +313,20 @@ function TicketForm() {
                 ))}
               </div>
             )}
+            {errors.attachments && (
+              <div style={{ color: 'red', fontSize: '12px', display: 'flex', alignItems: 'center' }}>
+                <ErrorIcon />
+                {errors.attachments}
+              </div>
+            )}
           </div>
         </div>
       </form>
       <div className="form-actions">
-        <button type="submit" className="create-button">
+        <button type="submit" onClick={(e) => handleSubmit(e)} className="create-button">
           Create
         </button>
-        <button type="button" onClick={handleSubmit} className="create-assign-button">
+        <button type="button" onClick={(e) => handleSubmit(e, true)} className="create-assign-button">
           Create and add another
         </button>
         <button type="button" onClick={handleCancel} className="cancel-button">

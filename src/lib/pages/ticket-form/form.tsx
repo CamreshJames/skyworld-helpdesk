@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import TiptapEditor from './editor/tiptap-editor';
 import './form.css';
 import { AttachmentPinIcon } from '../../utils/icons';
+import { encryptData, decryptData } from '../../utils/cryptoUtils';
 
 // Types
 interface Attachment {
@@ -14,7 +15,7 @@ interface Attachment {
 interface TicketFormData {
   mainCategory: string;
   subCategory: string;
-  projectPhase: string;
+  problemIssue: string;
   description: string;
   attachments: Attachment[];
 }
@@ -25,28 +26,74 @@ interface Ticket extends TicketFormData {
 }
 
 function TicketForm() {
+  // Initial form state with empty description
   const [formData, setFormData] = useState<TicketFormData>({
     mainCategory: '',
     subCategory: '',
-    projectPhase: '',
-    description: 'Description',
+    problemIssue: '',
+    description: '<p></p>',
     attachments: []
   });
 
   const [errors, setErrors] = useState<Partial<Record<keyof TicketFormData, string>>>({});
-  const [tickets, setTickets] = useState<Ticket[]>(() => {
-    // Initialize from localStorage if available
-    const savedTickets = localStorage.getItem('tickets');
-    return savedTickets ? JSON.parse(savedTickets) : [];
-  });
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [storageError, setStorageError] = useState<string | null>(null);
   const [, setSelectedFiles] = useState<FileList | null>(null);
+
+  // Check for encryption key on mount
+  const aesKey = import.meta.env.VITE_AES_KEY;
+  useEffect(() => {
+    if (!aesKey) {
+      console.error('VITE_AES_KEY is not defined in the .env file');
+      setStorageError('Encryption key is missing. Please contact support.');
+    }
+  }, []); // Empty dependency array to run once on mount
+
+  // Load and decrypt tickets from localStorage on mount
+  useEffect(() => {
+    if (!aesKey) return;
+
+    const loadTickets = async () => {
+      const savedTickets = localStorage.getItem('tickets');
+      if (savedTickets) {
+        try {
+          // Decrypt tickets from storage
+          const decrypted = await decryptData(savedTickets, aesKey);
+          setTickets(JSON.parse(decrypted));
+        } catch (error) {
+          console.error('Failed to decrypt tickets:', error);
+          setStorageError('Failed to load tickets. Data may be corrupted or key is invalid.');
+          setTickets([]);
+        }
+      }
+    };
+    loadTickets();
+  }, [aesKey]); // Run when aesKey changes
 
   // Save to localStorage and sessionStorage whenever tickets change
   useEffect(() => {
-    localStorage.setItem('tickets', JSON.stringify(tickets));
-    sessionStorage.setItem('tickets', JSON.stringify(tickets));
-  }, [tickets]);
+    if (!aesKey || tickets.length === 0) return; // Skip if no tickets or no key
 
+    const saveTickets = async () => {
+      try {
+        // Encrypt tickets before saving
+        const encryptedTickets = await encryptData(JSON.stringify(tickets), aesKey);
+        localStorage.setItem('tickets', encryptedTickets);
+        sessionStorage.setItem('tickets', encryptedTickets);
+      } catch (error) {
+        console.error('Failed to encrypt and save tickets:', error);
+        setStorageError('Failed to save tickets. Please try again.');
+      }
+    };
+    saveTickets();
+  }, [tickets, aesKey]); // Run when tickets or aesKey changes
+
+  // Constants for attachment validation
+  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
+  const maxSize = 2 * 1024 * 1024; // 2MB
+  const maxFiles = 5;
+
+  // Validate form fields and attachments
   const validateForm = (): boolean => {
     const newErrors: Partial<Record<keyof TicketFormData, string>> = {};
 
@@ -58,17 +105,17 @@ function TicketForm() {
       newErrors.subCategory = 'Sub Category is required';
     }
 
-    if (!formData.projectPhase.trim()) {
-      newErrors.projectPhase = 'Project Phase is required';
+    if (!formData.problemIssue.trim()) {
+      newErrors.problemIssue = 'Problem/Issue is required';
     }
 
-    if (formData.description.trim() === 'Description' || formData.description.trim() === '') {
+    if (formData.description.trim() === '<p></p>' || formData.description.trim() === '') {
       newErrors.description = 'Description is required';
     }
 
     // Validate attachments
-    if (formData.attachments.length > 5) {
-      newErrors.attachments = 'Maximum 5 files allowed';
+    if (formData.attachments.length > maxFiles) {
+      newErrors.attachments = `Maximum ${maxFiles} files allowed`;
     }
 
     formData.attachments.forEach((attachment) => {
@@ -77,7 +124,7 @@ function TicketForm() {
       if (!extension || !validExtensions.includes(extension)) {
         newErrors.attachments = 'Only .jpg, .jpeg, .pdf, .png files are allowed';
       }
-      if (attachment.size > 2 * 1024 * 1024) { // 2MB in bytes
+      if (attachment.size > maxSize) {
         newErrors.attachments = 'File size must not exceed 2MB';
       }
     });
@@ -86,37 +133,60 @@ function TicketForm() {
     return Object.keys(newErrors).length === 0;
   };
 
+  // Handle input changes for text fields
   const handleInputChange = (field: keyof TicketFormData, value: string) => {
     setFormData(prev => ({
       ...prev,
-      [field]: value,
-      ...(field === 'mainCategory' && { subCategory: '' })
+      [field]: value
     }));
     // Clear error for this field when user starts typing
     setErrors(prev => ({ ...prev, [field]: undefined }));
   };
 
+  // Handle file selection with validation
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files) {
+      const newAttachments: Attachment[] = [];
+      const invalidFiles: string[] = [];
+
+      Array.from(files).forEach(file => {
+        if (!allowedTypes.includes(file.type)) {
+          invalidFiles.push(`${file.name} (invalid type)`);
+          return;
+        }
+        if (file.size > maxSize) {
+          invalidFiles.push(`${file.name} (size exceeds 2MB)`);
+          return;
+        }
+        newAttachments.push({
+          id: `${Date.now()}-${newAttachments.length}`,
+          name: file.name,
+          size: file.size,
+          type: file.type
+        });
+      });
+
+      if (formData.attachments.length + newAttachments.length > maxFiles) {
+        setErrors(prev => ({ ...prev, attachments: `Maximum ${maxFiles} files allowed` }));
+        return;
+      }
+
+      if (invalidFiles.length > 0) {
+        setErrors(prev => ({ ...prev, attachments: `Invalid files: ${invalidFiles.join(', ')}` }));
+      }
+
       setSelectedFiles(files);
-
-      const newAttachments: Attachment[] = Array.from(files).map((file, index) => ({
-        id: `${Date.now()}-${index}`,
-        name: file.name,
-        size: file.size,
-        type: file.type
-      }));
-
       setFormData(prev => ({
         ...prev,
         attachments: [...prev.attachments, ...newAttachments]
       }));
-      // Validate attachments immediately
+      // Re-validate after adding attachments
       validateForm();
     }
   };
 
+  // Remove an attachment by ID
   const removeAttachment = (id: string) => {
     setFormData(prev => ({
       ...prev,
@@ -126,6 +196,7 @@ function TicketForm() {
     validateForm();
   };
 
+  // Format file size for display
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -134,10 +205,16 @@ function TicketForm() {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  // Handle form submission for "Create" and "Create and add another"
   const handleSubmit = (event: React.FormEvent, addAnother: boolean = false) => {
     event.preventDefault();
 
     if (!validateForm()) {
+      return;
+    }
+
+    if (!aesKey) {
+      setStorageError('Cannot save ticket: Encryption key is missing.');
       return;
     }
 
@@ -151,32 +228,28 @@ function TicketForm() {
 
     if (!addAnother) {
       alert('Ticket created successfully!');
-      handleCancel();
+      handleReset();
     } else {
       alert('Ticket created successfully! Ready to add another.');
-      setFormData({
-        mainCategory: '',
-        subCategory: '',
-        projectPhase: '',
-        description: 'Description',
-        attachments: []
-      });
-      setSelectedFiles(null);
+      handleReset();
     }
   };
 
-  const handleCancel = () => {
+  // Reset form to initial state
+  const handleReset = () => {
     setFormData({
       mainCategory: '',
       subCategory: '',
-      projectPhase: '',
-      description: 'Description',
+      problemIssue: '',
+      description: '<p></p>',
       attachments: []
     });
     setSelectedFiles(null);
     setErrors({});
+    setStorageError(null); // Clear storage errors on reset
   };
 
+  // Error icon component for validation messages
   const ErrorIcon = () => (
     <svg
       width="16"
@@ -198,6 +271,13 @@ function TicketForm() {
         <h2>Create Ticket</h2>
       </div>
 
+      {storageError && (
+        <div style={{ color: 'red', fontSize: '14px', marginBottom: '10px', display: 'flex', alignItems: 'center' }}>
+          <ErrorIcon />
+          {storageError}
+        </div>
+      )}
+
       <form onSubmit={(e) => handleSubmit(e)} className="ticket-form">
         <div className="form-group">
           <label htmlFor="mainCategory">Main Category *</label>
@@ -205,7 +285,7 @@ function TicketForm() {
             id="mainCategory"
             value={formData.mainCategory}
             onChange={(e) => handleInputChange('mainCategory', e.target.value)}
-            placeholder="Enter Main Category"
+            placeholder="Main Category"
             required
           />
           {errors.mainCategory && (
@@ -222,8 +302,7 @@ function TicketForm() {
             id="subCategory"
             value={formData.subCategory}
             onChange={(e) => handleInputChange('subCategory', e.target.value)}
-            placeholder="Enter Sub Category"
-            disabled={!formData.mainCategory}
+            placeholder="Sub Category"
             required
           />
           {errors.subCategory && (
@@ -235,18 +314,18 @@ function TicketForm() {
         </div>
 
         <div className="form-group">
-          <label htmlFor="projectPhase">Project Phase *</label>
+          <label htmlFor="problemIssue">Problem/Issue *</label>
           <input
-            id="projectPhase"
-            value={formData.projectPhase}
-            onChange={(e) => handleInputChange('projectPhase', e.target.value)}
-            placeholder="Enter Project Phase"
+            id="problemIssue"
+            value={formData.problemIssue}
+            onChange={(e) => handleInputChange('problemIssue', e.target.value)}
+            placeholder="Problem/Issue"
             required
           />
-          {errors.projectPhase && (
+          {errors.problemIssue && (
             <div style={{ color: 'red', fontSize: '12px', display: 'flex', alignItems: 'center' }}>
               <ErrorIcon />
-              {errors.projectPhase}
+              {errors.problemIssue}
             </div>
           )}
         </div>
@@ -329,7 +408,7 @@ function TicketForm() {
         <button type="button" onClick={(e) => handleSubmit(e, true)} className="create-assign-button">
           Create and add another
         </button>
-        <button type="button" onClick={handleCancel} className="cancel-button">
+        <button type="button" onClick={handleReset} className="cancel-button">
           Cancel
         </button>
       </div>

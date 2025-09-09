@@ -26,7 +26,6 @@ interface Ticket extends TicketFormData {
 }
 
 function TicketForm() {
-  // Initial form state with empty description
   const [formData, setFormData] = useState<TicketFormData>({
     mainCategory: '',
     subCategory: '',
@@ -38,6 +37,7 @@ function TicketForm() {
   const [errors, setErrors] = useState<Partial<Record<keyof TicketFormData, string>>>({});
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [storageError, setStorageError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [, setSelectedFiles] = useState<FileList | null>(null);
 
   // Check for encryption key on mount
@@ -48,6 +48,15 @@ function TicketForm() {
       setStorageError('Encryption key is missing. Please contact support.');
     }
   }, []); // Empty dependency array to run once on mount
+
+  useEffect(() => {
+    if (successMessage) {
+      const timer = setTimeout(() => {
+        setSuccessMessage(null);
+      }, 3000); 
+      return () => clearTimeout(timer); 
+    }
+  }, [successMessage]);
 
   // Load and decrypt tickets from localStorage on mount
   useEffect(() => {
@@ -68,11 +77,10 @@ function TicketForm() {
       }
     };
     loadTickets();
-  }, [aesKey]); // Run when aesKey changes
+  }, [aesKey]);
 
-  // Save to localStorage and sessionStorage whenever tickets change
   useEffect(() => {
-    if (!aesKey || tickets.length === 0) return; // Skip if no tickets or no key
+    if (!aesKey || tickets.length === 0) return; 
 
     const saveTickets = async () => {
       try {
@@ -86,9 +94,8 @@ function TicketForm() {
       }
     };
     saveTickets();
-  }, [tickets, aesKey]); // Run when tickets or aesKey changes
-
-  // Constants for attachment validation
+  }, [tickets, aesKey]);
+  
   const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
   const maxSize = 2 * 1024 * 1024; // 2MB
   const maxFiles = 5;
@@ -226,11 +233,12 @@ function TicketForm() {
 
     setTickets(prev => [...prev, newTicket]);
 
+    // Set success message instead of alert
     if (!addAnother) {
-      alert('Ticket created successfully!');
+      setSuccessMessage('Ticket created successfully!');
       handleReset();
     } else {
-      alert('Ticket created successfully! Ready to add another.');
+      setSuccessMessage('Ticket created successfully! Ready to add another.');
       handleReset();
     }
   };
@@ -265,6 +273,21 @@ function TicketForm() {
     </svg>
   );
 
+  // Success icon component for success messages
+  const SuccessIcon = () => (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      style={{ marginRight: '4px', verticalAlign: 'middle' }}
+    >
+      <circle cx="8" cy="8" r="7" stroke="green" strokeWidth="1.5" />
+      <path d="M5 8.5L7.5 11L11 6" stroke="green" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+
   return (
     <div className="ticket-form-container">
       <div className="form-header">
@@ -277,6 +300,8 @@ function TicketForm() {
           {storageError}
         </div>
       )}
+
+
 
       <form onSubmit={(e) => handleSubmit(e)} className="ticket-form">
         <div className="form-group">
@@ -401,6 +426,12 @@ function TicketForm() {
           </div>
         </div>
       </form>
+      {successMessage && (
+        <div style={{ color: 'green', fontSize: '14px', marginBottom: '10px', display: 'flex', alignItems: 'center', border: '2px solid Green', padding: '4px 10px' }}>
+          <SuccessIcon />
+          {successMessage}
+        </div>
+      )}
       <div className="form-actions">
         <button type="submit" onClick={(e) => handleSubmit(e)} className="create-button">
           Create

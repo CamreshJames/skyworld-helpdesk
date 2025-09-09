@@ -40,7 +40,6 @@
 .helpdesk-badge {
   font-weight: 300;
   background-color: aliceblue;
-  color: hsla(208, 80%, 52%, 1);
   font-size: 12px;
   border-radius: 2px;
   width: 51px;
@@ -59,6 +58,14 @@
   line-height: 14px;
   letter-spacing: 0;
   text-transform: uppercase;
+}
+
+.client-badge {
+  color: hsla(27, 98%, 54%, 1); /* Vibrant orange for Client */
+}
+
+.vendor-badge {
+  color: hsla(208, 80%, 52%, 1); /* Blue for Vendor */
 }
 
 .header-right {

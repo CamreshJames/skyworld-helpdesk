@@ -2,7 +2,7 @@ import './list.css';
 import TicketlistLeft from '../../components/ticket-list-components/ticket-list/ticket-list-left';
 import TicketTableList from '../../components/ticket-list-components/ticket-list/ticket-list-right';
 import type { Ticket } from '../ticket-form/form';
-import { decryptData } from '../../utils/cryptoUtils';
+import { decryptData, encryptData } from '../../utils/cryptoUtils';
 import { useState, useEffect } from 'react';
 
 function TicketList() {
@@ -10,6 +10,7 @@ function TicketList() {
   const [selectedStatus, setSelectedStatus] = useState<string>('Open');
   const aesKey = import.meta.env.VITE_AES_KEY;
 
+  // Load tickets from localStorage and decrypt on mount
   useEffect(() => {
     if (!aesKey) return;
 
@@ -34,6 +35,23 @@ function TicketList() {
     loadTickets();
   }, [aesKey]);
 
+  // Save tickets to localStorage when tickets change
+  useEffect(() => {
+    if (!aesKey || tickets.length === 0) return;
+
+    const saveTickets = async () => {
+      try {
+        const encryptedTickets = await encryptData(JSON.stringify(tickets), aesKey);
+        localStorage.setItem('tickets', encryptedTickets);
+        sessionStorage.setItem('tickets', encryptedTickets);
+      } catch (error) {
+        console.error('Failed to save tickets:', error);
+      }
+    };
+    saveTickets();
+  }, [tickets, aesKey]);
+
+  // Listen for storage changes (for cross-tab updates)
   useEffect(() => {
     if (!aesKey) return;
 
@@ -60,16 +78,8 @@ function TicketList() {
 
   return (
     <div className="ticket-list-container">
-      <TicketlistLeft
-        tickets={tickets}
-        selectedStatus={selectedStatus}
-        setSelectedStatus={setSelectedStatus}
-      />
-      <TicketTableList
-        tickets={tickets}
-        selectedStatus={selectedStatus}
-        setTickets={setTickets}
-      />
+      <TicketlistLeft tickets={tickets} selectedStatus={selectedStatus} setSelectedStatus={setSelectedStatus} />
+      <TicketTableList tickets={tickets} selectedStatus={selectedStatus} setTickets={setTickets} />
     </div>
   );
 }

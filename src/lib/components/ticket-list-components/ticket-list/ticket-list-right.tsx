@@ -4,7 +4,7 @@ import type { Ticket } from '../../../pages/ticket-form/form.tsx';
 import './ticket-list-right.css';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { encryptData } from '../../../utils/cryptoUtils';
+import { AttachmentPinIcon } from '../../../utils/icons';
 
 interface TicketTableListProps {
   tickets: Ticket[];
@@ -23,29 +23,79 @@ function TicketEditModal({ ticket, onClose, onSave }: { ticket: Ticket; onClose:
     if (!aesKey) return;
     const updatedTicket = { ...ticket, status, source };
     onSave(updatedTicket);
-    try {
-      const encryptedTickets = await encryptData(JSON.stringify([updatedTicket]), aesKey);
-      localStorage.setItem('tickets', encryptedTickets);
-      sessionStorage.setItem('tickets', encryptedTickets);
-    } catch (error) {
-      console.error('Failed to save updated ticket:', error);
-    }
+  };
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
   return (
     <div className="modal-overlay">
       <div className="modal-content">
-        <h2>Update Ticket</h2>
-        <div className="modal-form-group">
-          <label>Status</label>
-          <select value={status} onChange={(e) => setStatus(e.target.value)}>
-            {statuses.map(s => <option key={s} value={s}>{s}</option>)}
-          </select>
+        <h2>Ticket Details and Update</h2>
+        
+        <div className="modal-details">
+          <h3>Ticket Information</h3>
+          <div className="modal-detail-row">
+            <span className="modal-detail-label">Ticket ID</span>
+            <span className="modal-detail-value">{ticket.id}</span>
+          </div>
+          <div className="modal-detail-row">
+            <span className="modal-detail-label">Main Category</span>
+            <span className="modal-detail-value">{ticket.mainCategory}</span>
+          </div>
+          <div className="modal-detail-row">
+            <span className="modal-detail-label">Sub Category</span>
+            <span className="modal-detail-value">{ticket.subCategory}</span>
+          </div>
+          <div className="modal-detail-row">
+            <span className="modal-detail-label">Problem/Issue</span>
+            <span className="modal-detail-value">{ticket.problemIssue}</span>
+          </div>
+          <div className="modal-detail-row">
+            <span className="modal-detail-label">Created At</span>
+            <span className="modal-detail-value">{new Date(ticket.createdAt).toLocaleString()}</span>
+          </div>
         </div>
-        <div className="modal-form-group">
-          <label>Source</label>
-          <input value={source} onChange={(e) => setSource(e.target.value)} />
+
+        <div className="modal-description">
+          <h3>Description</h3>
+          <div className="modal-description-content" dangerouslySetInnerHTML={{ __html: ticket.description }} />
         </div>
+
+        <div className="modal-attachments">
+          <h3>Attachments</h3>
+          {ticket.attachments.length > 0 ? (
+            ticket.attachments.map(attachment => (
+              <div key={attachment.id} className="modal-attachment-item">
+                <AttachmentPinIcon />
+                <span className="modal-attachment-name">{attachment.name}</span>
+                <span className="modal-attachment-size">({formatFileSize(attachment.size)})</span>
+              </div>
+            ))
+          ) : (
+            <p className="no-attachments">No attachments available.</p>
+          )}
+        </div>
+
+        <div className="modal-update-section">
+          <h3>Update Ticket</h3>
+          <div className="modal-form-group">
+            <label>Status</label>
+            <select value={status} onChange={(e) => setStatus(e.target.value)}>
+              {statuses.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </div>
+          <div className="modal-form-group">
+            <label>Source</label>
+            <input value={source} onChange={(e) => setSource(e.target.value)} />
+          </div>
+        </div>
+
         <div className="modal-actions">
           <button onClick={handleSave} className="save-button">Save</button>
           <button onClick={onClose} className="cancel-button">Cancel</button>
@@ -92,17 +142,18 @@ function TicketTableList({ tickets, selectedStatus, setTickets }: TicketTableLis
     source: { caption: 'Source', size: 150 },
     createdAt: { caption: 'Date Requested', size: 200, data_type: 'date' }
   };
+
   const navigate = useNavigate();
 
   const handleIconClick = (path: string) => {
     navigate(path);
   };
+
   return (
-    
     <div className="ticket-list-right">
       <div className="ticket-list-right-header">
         <span>All Tickets</span>
-        <button onClick={() => handleIconClick('/ticket-form')}  className="add-ticket-button">Add Ticket</button>
+        <button onClick={() => handleIconClick('/ticket-form')} className="add-ticket-button">Add Ticket</button>
       </div>
       <Table data={filteredTickets} columnsMap={ticketColumnsMap} />
       {editingTicket && (

@@ -1,4 +1,4 @@
-import './ticket-count-satutus.css';
+import './ticket-count-status.css';
 
 type TicketStatusCountProps = {
   color: string;

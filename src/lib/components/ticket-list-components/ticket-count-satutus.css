@@ -11,9 +11,13 @@
     flex: 1;
 }
 
+.status.selected {
+    background-color: #e6f7fb;
+    font-weight: 600;
+}
+
 .statusColor {
     display: inline-block;
-    color: aqua;
     width: 14px;
     height: 14px;
     border-radius: 2px;

@@ -23,6 +23,8 @@ interface TicketFormData {
 export interface Ticket extends TicketFormData {
   id: string;
   createdAt: string;
+  status: string;
+  source: string;
 }
 
 function TicketForm() {
@@ -40,25 +42,23 @@ function TicketForm() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [, setSelectedFiles] = useState<FileList | null>(null);
 
-  // Check for encryption key on mount
   const aesKey = import.meta.env.VITE_AES_KEY;
   useEffect(() => {
     if (!aesKey) {
       console.error('VITE_AES_KEY is not defined in the .env file');
       setStorageError('Encryption key is missing. Please contact support.');
     }
-  }, []); // Empty dependency array to run once on mount
+  }, []);
 
   useEffect(() => {
     if (successMessage) {
       const timer = setTimeout(() => {
         setSuccessMessage(null);
-      }, 3000); 
-      return () => clearTimeout(timer); 
+      }, 3000);
+      return () => clearTimeout(timer);
     }
   }, [successMessage]);
 
-  // Load and decrypt tickets from localStorage on mount
   useEffect(() => {
     if (!aesKey) return;
 
@@ -66,9 +66,14 @@ function TicketForm() {
       const savedTickets = localStorage.getItem('tickets');
       if (savedTickets) {
         try {
-          // Decrypt tickets from storage
           const decrypted = await decryptData(savedTickets, aesKey);
-          setTickets(JSON.parse(decrypted));
+          const parsed = JSON.parse(decrypted);
+          const updated = parsed.map((t: Ticket) => ({
+            ...t,
+            status: t.status || 'Open',
+            source: t.source || 'Helpdesk'
+          }));
+          setTickets(updated);
         } catch (error) {
           console.error('Failed to decrypt tickets:', error);
           setStorageError('Failed to load tickets. Data may be corrupted or key is invalid.');
@@ -80,11 +85,10 @@ function TicketForm() {
   }, [aesKey]);
 
   useEffect(() => {
-    if (!aesKey || tickets.length === 0) return; 
+    if (!aesKey || tickets.length === 0) return;
 
     const saveTickets = async () => {
       try {
-        // Encrypt tickets before saving
         const encryptedTickets = await encryptData(JSON.stringify(tickets), aesKey);
         localStorage.setItem('tickets', encryptedTickets);
         sessionStorage.setItem('tickets', encryptedTickets);
@@ -94,14 +98,12 @@ function TicketForm() {
       }
     };
     saveTickets();
-  }, [tickets, aesKey]); // Run when tickets or aesKey changes
+  }, [tickets, aesKey]);
 
-  // Constants for attachment validation
   const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
-  const maxSize = 2 * 1024 * 1024; // 2MB
+  const maxSize = 2 * 1024 * 1024;
   const maxFiles = 5;
 
-  // Validate form fields and attachments
   const validateForm = (): boolean => {
     const newErrors: Partial<Record<keyof TicketFormData, string>> = {};
 
@@ -121,7 +123,6 @@ function TicketForm() {
       newErrors.description = 'Description is required';
     }
 
-    // Validate attachments
     if (formData.attachments.length > maxFiles) {
       newErrors.attachments = `Maximum ${maxFiles} files allowed`;
     }
@@ -141,70 +142,65 @@ function TicketForm() {
     return Object.keys(newErrors).length === 0;
   };
 
-  // Handle input changes for text fields
   const handleInputChange = (field: keyof TicketFormData, value: string) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
-    // Clear error for this field when user starts typing
     setErrors(prev => ({ ...prev, [field]: undefined }));
   };
 
-  // Handle file selection with validation
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
-    if (files) {
-      const newAttachments: Attachment[] = [];
-      const invalidFiles: string[] = [];
+    if (!files) return;
 
-      Array.from(files).forEach(file => {
-        if (!allowedTypes.includes(file.type)) {
-          invalidFiles.push(`${file.name} (invalid type)`);
-          return;
-        }
-        if (file.size > maxSize) {
-          invalidFiles.push(`${file.name} (size exceeds 2MB)`);
-          return;
-        }
-        newAttachments.push({
-          id: `${Date.now()}-${newAttachments.length}`,
-          name: file.name,
-          size: file.size,
-          type: file.type
-        });
-      });
+    const newAttachments: Attachment[] = [];
+    const invalidFiles: string[] = [];
 
-      if (formData.attachments.length + newAttachments.length > maxFiles) {
-        setErrors(prev => ({ ...prev, attachments: `Maximum ${maxFiles} files allowed` }));
+    Array.from(files).forEach(file => {
+      if (!allowedTypes.includes(file.type)) {
+        invalidFiles.push(`${file.name} (invalid type)`);
         return;
       }
-
-      if (invalidFiles.length > 0) {
-        setErrors(prev => ({ ...prev, attachments: `Invalid files: ${invalidFiles.join(', ')}` }));
+      if (file.size > maxSize) {
+        invalidFiles.push(`${file.name} (size exceeds 2MB)`);
+        return;
       }
+      newAttachments.push({
+        id: `${Date.now()}-${newAttachments.length}`,
+        name: file.name,
+        size: file.size,
+        type: file.type
+      });
+    });
 
-      setSelectedFiles(files);
-      setFormData(prev => ({
-        ...prev,
-        attachments: [...prev.attachments, ...newAttachments]
-      }));
-      // Re-validate after adding attachments
-      validateForm();
+    if (formData.attachments.length + newAttachments.length > maxFiles) {
+      setErrors(prev => ({ ...prev, attachments: `Maximum ${maxFiles} files allowed` }));
+      return;
     }
+
+    if (invalidFiles.length > 0) {
+      setErrors(prev => ({ ...prev, attachments: `Invalid files: ${invalidFiles.join(', ')}` }));
+      if (newAttachments.length === 0) return; // Only update state if there are valid files
+    } else {
+      setErrors(prev => ({ ...prev, attachments: undefined }));
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      attachments: [...prev.attachments, ...newAttachments]
+    }));
+    setSelectedFiles(files);
   };
 
-  // Remove an attachment by ID
   const removeAttachment = (id: string) => {
     setFormData(prev => ({
       ...prev,
       attachments: prev.attachments.filter(att => att.id !== id)
     }));
-    // Re-validate after removing attachment
     validateForm();
   };
 
-  // Format file size for display
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -213,7 +209,6 @@ function TicketForm() {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  // Handle form submission for "Create" and "Create and add another"
   const handleSubmit = (event: React.FormEvent, addAnother: boolean = false) => {
     event.preventDefault();
 
@@ -229,22 +224,38 @@ function TicketForm() {
     const newTicket: Ticket = {
       ...formData,
       id: `${Date.now()}`,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      status: 'Open',
+      source: 'Helpdesk'
     };
 
     setTickets(prev => [...prev, newTicket]);
+    setSuccessMessage('Ticket created successfully!');
 
-    // Set success message instead of alert
     if (!addAnother) {
-      setSuccessMessage('Ticket created successfully!');
-      handleReset();
+      setFormData({
+        mainCategory: '',
+        subCategory: '',
+        problemIssue: '',
+        description: '<p></p>',
+        attachments: []
+      });
+      setSelectedFiles(null);
+      setErrors({});
     } else {
+      setFormData({
+        mainCategory: '',
+        subCategory: '',
+        problemIssue: '',
+        description: '<p></p>',
+        attachments: []
+      });
+      setSelectedFiles(null);
+      setErrors({});
       setSuccessMessage('Ticket created successfully! Ready to add another.');
-      handleReset();
     }
   };
 
-  // Reset form to initial state
   const handleReset = () => {
     setFormData({
       mainCategory: '',
@@ -255,10 +266,9 @@ function TicketForm() {
     });
     setSelectedFiles(null);
     setErrors({});
-    setStorageError(null); // Clear storage errors on reset
+    setStorageError(null);
   };
 
-  // Error icon component for validation messages
   const ErrorIcon = () => (
     <svg
       width="16"
@@ -274,7 +284,6 @@ function TicketForm() {
     </svg>
   );
 
-  // Success icon component for success messages
   const SuccessIcon = () => (
     <svg
       width="16"
@@ -301,8 +310,6 @@ function TicketForm() {
           {storageError}
         </div>
       )}
-
-
 
       <form onSubmit={(e) => handleSubmit(e)} className="ticket-form">
         <div className="form-group">

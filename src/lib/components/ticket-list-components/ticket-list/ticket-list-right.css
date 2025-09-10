@@ -151,9 +151,17 @@
     font-size: 14px;
 }
 
-.modal-form-group input,
 .modal-form-group select {
     width: 100%;
+    padding: 8px 12px;
+    border: 1px solid hsla(210, 14%, 89%, 1);
+    border-radius: 4px;
+    font-size: 14px;
+    background: white;
+    color: #333;
+}
+.modal-form-group input {
+    width: calc(100% - 24px);
     padding: 8px 12px;
     border: 1px solid hsla(210, 14%, 89%, 1);
     border-radius: 4px;

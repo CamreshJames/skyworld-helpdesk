@@ -3,6 +3,7 @@ import type { ColumnProps } from '../../../utils/table/Table.tsx';
 import type { Ticket } from '../../../pages/ticket-form/form.tsx';
 import './ticket-list-right.css';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { encryptData } from '../../../utils/cryptoUtils';
 
 interface TicketTableListProps {
@@ -91,11 +92,17 @@ function TicketTableList({ tickets, selectedStatus, setTickets }: TicketTableLis
     source: { caption: 'Source', size: 150 },
     createdAt: { caption: 'Date Requested', size: 200, data_type: 'date' }
   };
+  const navigate = useNavigate();
 
+  const handleIconClick = (path: string) => {
+    navigate(path);
+  };
   return (
+    
     <div className="ticket-list-right">
       <div className="ticket-list-right-header">
-        All Tickets
+        <span>All Tickets</span>
+        <button onClick={() => handleIconClick('/ticket-form')}  className="add-ticket-button">Add Ticket</button>
       </div>
       <Table data={filteredTickets} columnsMap={ticketColumnsMap} />
       {editingTicket && (

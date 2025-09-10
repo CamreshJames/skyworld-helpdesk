@@ -9,6 +9,16 @@
     background-color: hsla(210, 25%, 97%, 1);
     display: flex;
     align-items: center;
+    justify-content: space-between;
+}
+.add-ticket-button {
+    background: hsla(191, 64%, 22%, 1);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
 }
 
 .modal-overlay {
@@ -42,6 +52,7 @@
 
 .modal-form-group {
     margin-bottom: 20px;
+    margin:0 10px;
 }
 
 .modal-form-group label {

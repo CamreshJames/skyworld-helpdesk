@@ -125,12 +125,11 @@
 }
 
 .remove-attachment {
-  background: #dc3545;
-  color: white;
-  border: none;
+  background: #fffeff;
   border-radius: 50%;
   width: 20px;
   height: 20px;
+  border: none;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -140,7 +139,7 @@
 }
 
 .remove-attachment:hover {
-  background: #c82333;
+  background: #979797;
 }
 
 /* Form Actions */

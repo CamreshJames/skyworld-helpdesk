@@ -110,16 +110,16 @@
 }
 
 .helpdesk-dropdown::after {
-  content: "<>";
+  content: "";
   position: absolute;
-  font-weight: 700;
   right: 10px;
-  top: 50%;
-  transform: translateY(-50%) rotate(90deg);
-  font-size: .8rem;
-  color: rgb(255, 255, 255);
+  width: 14px;
+  height: 14px;
+  background: url('data:image/svg+xml;utf8,<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4.66663 5.24999L6.99996 2.91666L9.33329 5.24999M9.33329 8.74999L6.99996 11.0833L4.66663 8.74999" stroke="%23868E96" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>') no-repeat center;
+  background-size: contain;
   pointer-events: none;
 }
+
 
 @media (max-width: 768px) {
   .helpdesk-text span {

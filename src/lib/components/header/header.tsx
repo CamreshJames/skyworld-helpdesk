@@ -1,29 +1,21 @@
 import { AddIcon, HeadphonesIcon, NotificationbellIcon, SearchIcon, UserIcon } from '../../utils/icons';
 import './header.css';
-import { useNavigate } from 'react-router-dom';
+import { Link } from '@tanstack/react-router';
 
-// Define props interface for type safety and future extensibility
 interface HeaderProps {
   companyName: string;
-  badgeText: 'Client' | 'Vendor'; // Restrict to valid badge types
+  badgeText: 'Client' | 'Vendor';
 }
 
 function Header({ companyName, badgeText }: HeaderProps) {
-  const navigate = useNavigate();
-
-  const handleIconClick = (path: string) => {
-    navigate(path);
-  };
-
-  // Determine badge class based on badgeText
   const badgeClass = badgeText === 'Client' ? 'client-badge' : 'vendor-badge';
 
   return (
     <div className="header">
       <div className="header-left">
-        <div className="helpdesk" onClick={() => handleIconClick('/home')}>
+        <Link to="/home" className="helpdesk">
           <HeadphonesIcon />
-        </div>
+        </Link>
         <div className="helpdesk-text">
           <span>Help Desk - {companyName}</span>
         </div>
@@ -32,12 +24,12 @@ function Header({ companyName, badgeText }: HeaderProps) {
         </div>
       </div>
       <div className="header-right">
-        <div className="helpdesk-add" onClick={() => handleIconClick('/ticket-form')}>
+        <Link to="/ticket-form" className="helpdesk-add">
           <AddIcon />
-        </div>
-        <div className="helpdesk-search" onClick={() => handleIconClick('/search')}>
+        </Link>
+        <Link to="/search" className="helpdesk-search">
           <SearchIcon />
-        </div>
+        </Link>
         <div className="helpdesk-dropdown">
           <select name="SelectSacco" id="sacco">
             <option>Apstar SACCO Limited</option>
@@ -45,12 +37,12 @@ function Header({ companyName, badgeText }: HeaderProps) {
             <option>Another Org</option>
           </select>
         </div>
-        <div className="helpdesk-bell" onClick={() => handleIconClick('/notifications')}>
+        <Link to="/notifications" className="helpdesk-bell">
           <NotificationbellIcon />
-        </div>
-        <div className="helpdesk-user" onClick={() => handleIconClick('/profile')}>
+        </Link>
+        <Link to="/profile" className="helpdesk-user">
           <UserIcon />
-        </div>
+        </Link>
       </div>
     </div>
   );

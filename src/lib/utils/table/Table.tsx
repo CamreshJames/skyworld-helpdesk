@@ -1,11 +1,10 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import './Table.css';
 
-// Type definitions for column configuration
 export interface ColumnProps<T> {
     id: keyof T | string;
     caption: string;
-    size?: number; // Width in pixels
+    size?: number; 
     align?: 'left' | 'center' | 'right';
     hide?: boolean;
     isSortable?: boolean;
@@ -14,15 +13,13 @@ export interface ColumnProps<T> {
     render?: (data: T) => React.ReactNode;
 }
 
-// Props for the Table component
 interface TableProps<T> {
     data: T[];
     columnsMap: Partial<Record<keyof T | string, Partial<ColumnProps<T>>>>;
     className?: string;
-    pageSizeOptions?: number[]; // Options for rows per page
+    pageSizeOptions?: number[]; 
 }
 
-// Utility to generate column definitions from columnsMap
 const generateColumns = <T,>(
     columnsMap: Partial<Record<keyof T | string, Partial<ColumnProps<T>>>>
 ): ColumnProps<T>[] => {
@@ -48,7 +45,6 @@ const generateColumns = <T,>(
 function Table<T>({ data, columnsMap, className = '', pageSizeOptions = [5, 10, 20] }: TableProps<T>) {
     const columns = useMemo(() => generateColumns(columnsMap), [columnsMap]);
 
-    // State for sorting, filtering, pagination, and search
     const [sortConfig, setSortConfig] = useState<{
         key: keyof T | string | null;
         direction: 'asc' | 'desc';
@@ -58,7 +54,6 @@ function Table<T>({ data, columnsMap, className = '', pageSizeOptions = [5, 10, 
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(pageSizeOptions[0]);
 
-    // Reset currentPage when pageSize changes
     useEffect(() => {
         setCurrentPage(1);
     }, [pageSize]);
@@ -191,7 +186,7 @@ function Table<T>({ data, columnsMap, className = '', pageSizeOptions = [5, 10, 
                                 )
                         )}
                     </tr>
-                    {/* Filter Row */}
+
                     <tr>
                         {columns.map(
                             (col) =>
@@ -236,7 +231,6 @@ function Table<T>({ data, columnsMap, className = '', pageSizeOptions = [5, 10, 
                 </tbody>
             </table>
 
-            {/* Pagination */}
             <div className="table-pagination">
                 <div className="page-size">
                     <span>Rows per page:</span>

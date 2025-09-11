@@ -3,8 +3,9 @@ import type { ColumnProps } from '../../../utils/table/Table.tsx';
 import type { Ticket } from '../../../pages/ticket-form/form.tsx';
 import './ticket-list-right.css';
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { AttachmentPinIcon } from '../../../utils/icons';
+import { Link } from '@tanstack/react-router';
+import { encryptData, decryptData } from '../../../utils/cryptoUtils';
+import { AttachmentPinIcon } from '../../../utils/icons.tsx';
 
 interface TicketTableListProps {
   tickets: Ticket[];
@@ -23,6 +24,24 @@ function TicketEditModal({ ticket, onClose, onSave }: { ticket: Ticket; onClose:
     if (!aesKey) return;
     const updatedTicket = { ...ticket, status, source };
     onSave(updatedTicket);
+
+    try {
+      // Load existing tickets from localStorage
+      const savedTickets = localStorage.getItem('tickets');
+      let allTickets: Ticket[] = [];
+      if (savedTickets) {
+        const decrypted = await decryptData(savedTickets, aesKey);
+        allTickets = JSON.parse(decrypted);
+      }
+      // Update the specific ticket
+      allTickets = allTickets.map(t => t.id === updatedTicket.id ? updatedTicket : t);
+      // Save the updated ticket list
+      const encryptedTickets = await encryptData(JSON.stringify(allTickets), aesKey);
+      localStorage.setItem('tickets', encryptedTickets);
+      sessionStorage.setItem('tickets', encryptedTickets);
+    } catch (error) {
+      console.error('Failed to save updated ticket:', error);
+    }
   };
 
   const formatFileSize = (bytes: number): string => {
@@ -37,7 +56,7 @@ function TicketEditModal({ ticket, onClose, onSave }: { ticket: Ticket; onClose:
     <div className="modal-overlay">
       <div className="modal-content">
         <h2>Ticket Details and Update</h2>
-        
+
         <div className="modal-details">
           <h3>Ticket Information</h3>
           <div className="modal-detail-row">
@@ -134,7 +153,7 @@ function TicketTableList({ tickets, selectedStatus, setTickets }: TicketTableLis
             handleEdit(data);
           }}
         >
-          {`${data.problemIssue}`}
+          {`${data.mainCategory} - ${data.subCategory}`}
         </a>
       )
     },
@@ -143,17 +162,13 @@ function TicketTableList({ tickets, selectedStatus, setTickets }: TicketTableLis
     createdAt: { caption: 'Date Requested', size: 200, data_type: 'date' }
   };
 
-  const navigate = useNavigate();
-
-  const handleIconClick = (path: string) => {
-    navigate(path);
-  };
-
   return (
     <div className="ticket-list-right">
       <div className="ticket-list-right-header">
         <span>All Tickets</span>
-        <button onClick={() => handleIconClick('/ticket-form')} className="add-ticket-button">Add Ticket</button>
+        <Link to="/ticket-form">
+          <button className="add-ticket-button">Add Ticket</button>
+        </Link>
       </div>
       <Table data={filteredTickets} columnsMap={ticketColumnsMap} />
       {editingTicket && (

@@ -185,13 +185,12 @@
 .cancel-button {
   background: #ffffff;
   color: hsla(27, 98%, 54%, 1);
-  border: 2px solid hsla(27, 98%, 54%, 1);
+  border: 1px solid hsla(27, 98%, 54%, 1);
   padding: 5px 1rem;
   border-radius: 4px;
   font-family: "Open Sans", sans-serif;
   font-weight: 700;
   font-size: 12px;
-  line-height: 28px;
   letter-spacing: 0;
 }
 

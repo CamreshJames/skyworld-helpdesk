@@ -1,13 +1,19 @@
+// sidebar.tsx
 import './sidebar.css';
 import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { ChangecatalogIcon, CollapseIcon, OrganizationIcon, PiedashboardIcon, SettingIcon, TicketsIcon, UsersIcon } from '../../utils/icons';
 
-function Sidebar() {
-  const [isExpanded, setIsExpanded] = useState(false);
+interface SidebarProps {
+  onToggle: (isExpanded: boolean) => void;
+}
 
+function Sidebar({ onToggle }: SidebarProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
   const handleToggle = () => {
-    setIsExpanded(!isExpanded);
+    const newState = !isExpanded;
+    setIsExpanded(newState);
+    onToggle(newState);
   };
 
   return (

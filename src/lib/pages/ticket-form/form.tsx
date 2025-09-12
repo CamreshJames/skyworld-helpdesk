@@ -10,6 +10,7 @@ export interface Attachment {
   name: string;
   size: number;
   type: string;
+  base64?: string; // Added base64 property for file content
 }
 
 interface TicketFormData {
@@ -41,8 +42,15 @@ function TicketForm() {
   const [storageError, setStorageError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [, setSelectedFiles] = useState<FileList | null>(null);
+  const [isProcessingFiles, setIsProcessingFiles] = useState(false);
 
   const aesKey = import.meta.env.VITE_AES_KEY;
+  
+  // Storage limits
+  const maxSize = 1024 * 1024; // Reduced to 1MB per file
+  const maxFiles = 3; // Reduced to 3 files
+  const maxTotalStorageSize = 5 * 1024 * 1024; // 5MB total storage limit
+  
   useEffect(() => {
     if (!aesKey) {
       console.error('VITE_AES_KEY is not defined in the .env file');
@@ -84,25 +92,42 @@ function TicketForm() {
     loadTickets();
   }, [aesKey]);
 
+  // Optimized save function with size checking
+  const saveTicketsToStorage = async (ticketsToSave: Ticket[]) => {
+    if (!aesKey) return;
+
+    try {
+      const ticketsJson = JSON.stringify(ticketsToSave);
+      const jsonSize = new Blob([ticketsJson]).size;
+      
+      if (jsonSize > maxTotalStorageSize) {
+        throw new Error(`Data size (${Math.round(jsonSize / 1024 / 1024 * 100) / 100}MB) exceeds maximum limit (${maxTotalStorageSize / 1024 / 1024}MB)`);
+      }
+
+      const encryptedTickets = await encryptData(ticketsJson, aesKey);
+      localStorage.setItem('tickets', encryptedTickets);
+      sessionStorage.setItem('tickets', encryptedTickets);
+    } catch (error) {
+      console.error('Failed to encrypt and save tickets:', error);
+      setStorageError(error instanceof Error ? error.message : 'Failed to save tickets. Please try again.');
+      throw error;
+    }
+  };
+
   useEffect(() => {
     if (!aesKey || tickets.length === 0) return;
 
     const saveTickets = async () => {
       try {
-        const encryptedTickets = await encryptData(JSON.stringify(tickets), aesKey);
-        localStorage.setItem('tickets', encryptedTickets);
-        sessionStorage.setItem('tickets', encryptedTickets);
+        await saveTicketsToStorage(tickets);
       } catch (error) {
-        console.error('Failed to encrypt and save tickets:', error);
-        setStorageError('Failed to save tickets. Please try again.');
+        // Error handling is done in saveTicketsToStorage
       }
     };
     saveTickets();
   }, [tickets, aesKey]);
 
   const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
-  const maxSize = 2 * 1024 * 1024;
-  const maxFiles = 5;
 
   const validateForm = (): boolean => {
     const newErrors: Partial<Record<keyof TicketFormData, string>> = {};
@@ -134,7 +159,7 @@ function TicketForm() {
         newErrors.attachments = 'Only .jpg, .jpeg, .pdf, .png files are allowed';
       }
       if (attachment.size > maxSize) {
-        newErrors.attachments = 'File size must not exceed 2MB';
+        newErrors.attachments = `File size must not exceed ${maxSize / 1024 / 1024}MB`;
       }
     });
 
@@ -150,47 +175,81 @@ function TicketForm() {
     setErrors(prev => ({ ...prev, [field]: undefined }));
   };
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+  // Helper function to convert file to base64
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = error => reject(error);
+    });
+  };
+
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files) return;
 
+    setIsProcessingFiles(true);
     const newAttachments: Attachment[] = [];
     const invalidFiles: string[] = [];
 
-    Array.from(files).forEach(file => {
-      if (!allowedTypes.includes(file.type)) {
-        invalidFiles.push(`${file.name} (invalid type)`);
+    try {
+      for (const file of Array.from(files)) {
+        if (!allowedTypes.includes(file.type)) {
+          invalidFiles.push(`${file.name} (invalid type)`);
+          continue;
+        }
+        if (file.size > maxSize) {
+          invalidFiles.push(`${file.name} (size exceeds ${maxSize / 1024 / 1024}MB)`);
+          continue;
+        }
+
+        // Convert file to base64
+        let base64: string | undefined;
+        try {
+          base64 = await fileToBase64(file);
+        } catch (error) {
+          console.error('Error converting file to base64:', error);
+          invalidFiles.push(`${file.name} (processing error)`);
+          continue;
+        }
+
+        newAttachments.push({
+          id: `${Date.now()}-${newAttachments.length}`,
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          base64: base64
+        });
+      }
+
+      if (formData.attachments.length + newAttachments.length > maxFiles) {
+        setErrors(prev => ({ ...prev, attachments: `Maximum ${maxFiles} files allowed` }));
+        setIsProcessingFiles(false);
         return;
       }
-      if (file.size > maxSize) {
-        invalidFiles.push(`${file.name} (size exceeds 2MB)`);
-        return;
+
+      if (invalidFiles.length > 0) {
+        setErrors(prev => ({ ...prev, attachments: `Invalid files: ${invalidFiles.join(', ')}` }));
+        if (newAttachments.length === 0) {
+          setIsProcessingFiles(false);
+          return;
+        }
+      } else {
+        setErrors(prev => ({ ...prev, attachments: undefined }));
       }
-      newAttachments.push({
-        id: `${Date.now()}-${newAttachments.length}`,
-        name: file.name,
-        size: file.size,
-        type: file.type
-      });
-    });
 
-    if (formData.attachments.length + newAttachments.length > maxFiles) {
-      setErrors(prev => ({ ...prev, attachments: `Maximum ${maxFiles} files allowed` }));
-      return;
+      setFormData(prev => ({
+        ...prev,
+        attachments: [...prev.attachments, ...newAttachments]
+      }));
+      setSelectedFiles(files);
+    } catch (error) {
+      console.error('Error processing files:', error);
+      setErrors(prev => ({ ...prev, attachments: 'Error processing files. Please try again.' }));
+    } finally {
+      setIsProcessingFiles(false);
     }
-
-    if (invalidFiles.length > 0) {
-      setErrors(prev => ({ ...prev, attachments: `Invalid files: ${invalidFiles.join(', ')}` }));
-      if (newAttachments.length === 0) return; // Only update state if there are valid files
-    } else {
-      setErrors(prev => ({ ...prev, attachments: undefined }));
-    }
-
-    setFormData(prev => ({
-      ...prev,
-      attachments: [...prev.attachments, ...newAttachments]
-    }));
-    setSelectedFiles(files);
   };
 
   const removeAttachment = (id: string) => {
@@ -209,7 +268,7 @@ function TicketForm() {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  const handleSubmit = (event: React.FormEvent, addAnother: boolean = false) => {
+  const handleSubmit = async (event: React.FormEvent, addAnother: boolean = false) => {
     event.preventDefault();
 
     if (!validateForm()) {
@@ -229,30 +288,36 @@ function TicketForm() {
       source: 'Helpdesk'
     };
 
-    setTickets(prev => [...prev, newTicket]);
-    setSuccessMessage('Ticket created successfully!');
+    try {
+      const updatedTickets = [...tickets, newTicket];
+      await saveTicketsToStorage(updatedTickets);
+      setTickets(updatedTickets);
+      setSuccessMessage('Ticket created successfully!');
 
-    if (!addAnother) {
-      setFormData({
-        mainCategory: '',
-        subCategory: '',
-        problemIssue: '',
-        description: '<p></p>',
-        attachments: []
-      });
-      setSelectedFiles(null);
-      setErrors({});
-    } else {
-      setFormData({
-        mainCategory: '',
-        subCategory: '',
-        problemIssue: '',
-        description: '<p></p>',
-        attachments: []
-      });
-      setSelectedFiles(null);
-      setErrors({});
-      setSuccessMessage('Ticket created successfully! Ready to add another.');
+      if (!addAnother) {
+        setFormData({
+          mainCategory: '',
+          subCategory: '',
+          problemIssue: '',
+          description: '<p></p>',
+          attachments: []
+        });
+        setSelectedFiles(null);
+        setErrors({});
+      } else {
+        setFormData({
+          mainCategory: '',
+          subCategory: '',
+          problemIssue: '',
+          description: '<p></p>',
+          attachments: []
+        });
+        setSelectedFiles(null);
+        setErrors({});
+        setSuccessMessage('Ticket created successfully! Ready to add another.');
+      }
+    } catch (error) {
+      // Error message is already set in saveTicketsToStorage
     }
   };
 
@@ -387,23 +452,25 @@ function TicketForm() {
               accept=".jpg,.jpeg,.pdf,.png"
               onChange={handleFileSelect}
               style={{ display: 'none' }}
+              disabled={isProcessingFiles}
             />
             <button
               type="button"
               onClick={() => document.getElementById('fileInput')?.click()}
               className="attach-button"
+              disabled={isProcessingFiles}
             >
-              Select Files
+              {isProcessingFiles ? 'Processing Files...' : 'Select Files'}
             </button>
             <div className="attachment-instruction">
               <div>
                 Allowed file extensions: <span className="bold-text">.jpg, .jpeg, .pdf, .png</span>
               </div>
               <div>
-                Maximum File Size: <span className="bold-text">2MB</span>
+                Maximum File Size: <span className="bold-text">{maxSize / 1024 / 1024}MB</span>
               </div>
               <div>
-                Maximum No. of File: <span className="bold-text">5</span>
+                Maximum No. of Files: <span className="bold-text">{maxFiles}</span>
               </div>
             </div>
 
@@ -420,9 +487,8 @@ function TicketForm() {
                       className="remove-attachment"
                     >
                       <svg width="11" height="10" viewBox="0 0 11 10" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path fill-rule="evenodd" clip-rule="evenodd" d="M0.950139 0.46967C1.24303 0.176777 1.71791 0.176777 2.0108 0.46967L5.48047 3.93934L8.95014 0.46967C9.24303 0.176777 9.71791 0.176777 10.0108 0.46967C10.3037 0.762563 10.3037 1.23744 10.0108 1.53033L6.54113 5L10.0108 8.46967C10.3037 8.76256 10.3037 9.23744 10.0108 9.53033C9.71791 9.82322 9.24303 9.82322 8.95014 9.53033L5.48047 6.06066L2.0108 9.53033C1.71791 9.82322 1.24303 9.82322 0.950139 9.53033C0.657245 9.23744 0.657245 8.76256 0.950139 8.46967L4.41981 5L0.950139 1.53033C0.657245 1.23744 0.657245 0.762563 0.950139 0.46967Z" fill="#C92A2A"/>
+                      <path fillRule="evenodd" clipRule="evenodd" d="M0.950139 0.46967C1.24303 0.176777 1.71791 0.176777 2.0108 0.46967L5.48047 3.93934L8.95014 0.46967C9.24303 0.176777 9.71791 0.176777 10.0108 0.46967C10.3037 0.762563 10.3037 1.23744 10.0108 1.53033L6.54113 5L10.0108 8.46967C10.3037 8.76256 10.3037 9.23744 10.0108 9.53033C9.71791 9.82322 9.24303 9.82322 8.95014 9.53033L5.48047 6.06066L2.0108 9.53033C1.71791 9.82322 1.24303 9.82322 0.950139 9.53033C0.657245 9.23744 0.657245 8.76256 0.950139 8.46967L4.41981 5L0.950139 1.53033C0.657245 1.23744 0.657245 0.762563 0.950139 0.46967Z" fill="#C92A2A"/>
                       </svg>
-
                     </button>
                   </div>
                 ))}
@@ -444,10 +510,10 @@ function TicketForm() {
         </div>
       )}
       <div className="form-actions">
-        <button type="submit" onClick={(e) => handleSubmit(e)} className="create-button">
+        <button type="submit" onClick={(e) => handleSubmit(e)} className="create-button" disabled={isProcessingFiles}>
           Create
         </button>
-        <button type="button" onClick={(e) => handleSubmit(e, true)} className="create-assign-button">
+        <button type="button" onClick={(e) => handleSubmit(e, true)} className="create-assign-button" disabled={isProcessingFiles}>
           Create and add another
         </button>
         <button type="button" onClick={handleReset} className="cancel-button">

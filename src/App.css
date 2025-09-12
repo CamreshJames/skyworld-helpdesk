@@ -5,23 +5,38 @@
   background-color: #f0f0f0;
 }
 
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+}
+
 .main-content {
   display: flex;
-  flex-direction: row;
   flex: 1;
-  overflow-y: auto;
+  margin-top: 48px;
+  margin-bottom: 36px;
 }
 
 .content-area {
   flex: 1;
-  padding: 0;
   background-color: #ffffff;
-  
-
+  overflow-y: auto;
+  height: calc(100vh - 84px);
 }
 
-@media (max-width: 768px) {
-  .main-content {
-    flex-direction: column;
-  }
+.content-area.auth-content {
+  margin-left: 0 !important;
+  width: 100%;
 }
+
+.footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+}
+

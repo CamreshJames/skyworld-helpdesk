@@ -22,8 +22,9 @@
     gap: 1rem;
   }
   
-  .sidebar-top > div {
+  .sidebar-top .sidebar-link {
     width: 100%;
+    text-decoration: none;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -32,14 +33,14 @@
     transition: background-color 0.2s;
     position: relative;
   }
-  .sidebar.expanded .sidebar-top > div{
+  .sidebar.expanded .sidebar-top .sidebar-link{
     display: flex;
     align-items: center;
     justify-content: left;
-    padding-left: 1rem;
+    padding-left: 1rem 0;
   }
   
-  .sidebar-top > div:hover {
+  .sidebar-top .sidebar-link:hover {
     background-color: hsla(191, 64%, 30%, 1);
   }
   .sidebar-icon-label {
@@ -51,11 +52,11 @@
     white-space: nowrap;
   }
   
-  .sidebar.expanded .sidebar-top > div .sidebar-icon-label {
+  .sidebar.expanded .sidebar-top .sidebar-link .sidebar-icon-label {
     display: block;
   }
 
-  .sidebar:not(.expanded) .sidebar-top > div:hover::after {
+  .sidebar:not(.expanded) .sidebar-top .sidebar-link:hover::after {
     content: attr(data-tooltip);
     position: absolute;
     left: 100%;

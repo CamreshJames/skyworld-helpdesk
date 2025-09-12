@@ -6,8 +6,18 @@
   font-family: 'Inter', sans-serif;
 }
 
-.table-search {
+.table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.table-search {
+  flex: 1;
+  min-width: 200px;
 }
 
 .table-search-input {
@@ -19,9 +29,79 @@
   font-size: 14px;
 }
 
+.table-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.icon-btn-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  height: 40px;
+}
+
+.icon-btn:hover {
+  background-color: #f3f4f6;
+}
+
+.badge-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.badge {
+  background-color: #ef4444;
+  color: white;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: bold;
+  padding: 2px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.clear-x {
+  background-color: #dc2626;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  font-size: 10px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  top: -8px;
+}
+
+.clear-x:hover {
+  background-color: #b91c1c;
+}
+
 .table {
   width: 100%;
   border-collapse: collapse;
+  margin-bottom: 16px;
 }
 
 .table th,
@@ -42,25 +122,10 @@
   color: #1f2937;
 }
 
-.table .sortable {
-  cursor: pointer;
-}
-
-.table .sortable:hover {
-  background-color: #e5e7eb;
-}
-
-.table .sort-icon {
+.sort-icon {
   margin-left: 4px;
   font-size: 12px;
-}
-
-.table-filter-input {
-  width: 100%;
-  padding: 6px;
-  border: 1px solid #d1d5db;
-  border-radius: 4px;
-  font-size: 12px;
+  vertical-align: middle;
 }
 
 .table .no-data {
@@ -112,4 +177,150 @@
 .page-controls span {
   font-size: 14px;
   color: #374151;
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal-content {
+  background-color: #ffffff;
+  padding: 24px;
+  border-radius: 8px;
+  max-width: 600px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  position: relative;
+}
+
+.modal-content h3 {
+  margin: 0 0 16px 0;
+  color: #374151;
+  font-size: 18px;
+}
+
+.filter-item,
+.sort-item {
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.filter-item:last-child,
+.sort-item:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.filter-criteria,
+.sort-criteria {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.filter-select,
+.sort-select {
+  padding: 6px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 14px;
+  min-width: 120px;
+}
+
+.input-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex: 1;
+}
+
+.input-group input {
+  flex: 1;
+}
+
+.clear-filter-btn,
+.sort-move-btn {
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 14px;
+  min-width: 32px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.clear-filter-btn:hover,
+.sort-move-btn:hover {
+  background-color: #dc2626;
+}
+
+.add-filter-btn,
+.add-sort-btn {
+  background-color: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+.add-filter-btn:hover,
+.add-sort-btn:hover {
+  background-color: #e5e7eb;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.modal-actions button {
+  padding: 8px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background-color: #ffffff;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.modal-actions button:hover {
+  background-color: #f3f4f6;
+}
+
+.modal-actions button:first-child {
+  background-color: #fef2f2;
+  color: #dc2626;
+}
+
+.modal-actions button:first-child:hover {
+  background-color: #fee2e2;
 }
